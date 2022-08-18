@@ -47,6 +47,7 @@ CPPFLAGS += -Os
 CPPFLAGS += -fmessage-length=0 -fno-common
 CPPFLAGS += -ffunction-sections -fdata-sections
 CPPFLAGS += -fno-exceptions
+CPPFLAGS += -fno-rtti
 CPPFLAGS += -std=c++17
 
 # Linker directives.
@@ -74,6 +75,8 @@ C_SRC    += ./FreeRTOS/queue.c
 C_SRC    += ./FreeRTOS/timers.c
 C_SRC    += ./src/system_stm32h7xx.c
 CPP_SRC   = ./src/main.cpp
+CPP_SRC  += ./src/core.cpp
+CPP_SRC  += ./src/gpio.cpp
 
 # Include 
 INCLUDE   = -I./

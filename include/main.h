@@ -33,13 +33,17 @@ extern "C" {
 /* Includes */
 #include <stdint.h>
 #include "stm32h7xx.h"
+#include "core.h"
+#include "gpio.h"
 
 /* Define registers */
-#define RCC_AHB4ENR   *(volatile uint32_t *)(RCC_BASE   + 0x0E0)  // register AHB4
 #define RCC_APB1LENR  *(volatile uint32_t *)(RCC_BASE   + 0x0E8)  // register APB1 for UART5
 
 // Bit fields
 #define GPIOA1  (1UL <<  1)
+
+// LED Pin
+#define LED_PIN_1  (1)
 
 
 #ifdef __cplusplus

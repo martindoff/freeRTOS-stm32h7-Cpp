@@ -32,23 +32,26 @@
 
 /* Function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-static void LED_Init(void);
-static void task1(void *args __attribute((unused)));
- 
+static void GPIO_Config(void);
+static void LED_task(void *args); 
+
+/* Global variables --------------------------------------------------*/
+pGPIO     LED;  // LED class
 
 int main(void)
 {
-  /* Configure peripherals */
-  LED_Init();
-
+  const int delay = 500;
   /* Configure the system clock */
   SystemClock_Config();
-
+  
+  /* Configure peripherals */
+  GPIO_Config(); 
+  
   /*FreeRTOS */ 
   
-  // add threads
-  xTaskCreate(task1, "LED", 100, nullptr, configMAX_PRIORITIES-1 , nullptr);
-
+  // Create a blinking LED task for the on-board LED.
+  xTaskCreate(LED_task, "Blink_LED", 128, (void*)&delay, configMAX_PRIORITIES-7, NULL);
+  
   // Start scheduler 
   vTaskStartScheduler();
   
@@ -187,6 +190,24 @@ static void SystemClock_Config(void)
 }
 
 /**
+  * GPIO Configuration 
+  */
+static void GPIO_Config(){
+
+  
+  // Initialisation and clock enable
+  LED = pGPIO(GPIOA);
+  LED.clock_en();
+  
+  // Configure the LED pin.
+  LED.set_pin_mode(LED_PIN_1, pGPIO_MODE_OUT);
+  LED.set_pin_type(LED_PIN_1, pGPIO_OTYPE_PP);
+  LED.set_pin_speed(LED_PIN_1, pGPIO_SPEED_LOW);
+  LED.set_pin_pupd(LED_PIN_1, pGPIO_PUPD_NONE);
+  
+}
+
+/**
   * Stack overflow detection 
   */
 extern "C" void vApplicationStackOverflowHook(TaskHandle_t xTask __attribute((unused)), 
@@ -200,38 +221,17 @@ extern "C" void vApplicationStackOverflowHook(TaskHandle_t xTask __attribute((un
 	} 
 }
 
-/**
-  * Configure peripherals for LED blink
-  */
-static void LED_Init(void)
-{
-  
-  //Initialize all configured peripherals
-  RCC_AHB4ENR |= RCC_AHB4ENR_GPIOAEN;
-
-  // Set PA1 to output push-pull
-  GPIOA->MODER   &=  ~(0x3UL << 2U);
-  GPIOA->MODER   |=   (0x1UL << 2U);  //-> 01 in MODER1[1:0] (General purpose output mode)
-  GPIOA->OTYPER  &=  ~(0x1UL << 1U);
-  GPIOA->OTYPER  |=   (0x0UL << 1U);  //-> 0 in OT1 (Output push-pull)
-  GPIOA->OSPEEDR &=  ~(0x3UL << 2U);
-  GPIOA->OSPEEDR |=   (0x0UL << 2U);  //-> 00 in OSPEEDR1[1:0] (Low speed)
-  GPIOA->PUPDR   &=  ~(0x3UL << 2U);
-  GPIOA->PUPDR   |=   (0x0UL << 2U);  //-> 00 in PUPDR1[1:0] (No pull-up/-down)
-}
 
 /* Task definition ----------------------------------------------------*/
-/**
-  * Blink LED task 
-  */
 
-static void task1(void *args __attribute((unused)))
-{
-    while(true)
-    {
-    	GPIOA->ODR &=  ~GPIOA1; // pull down (clear) => ON
-    	vTaskDelay(pdMS_TO_TICKS(500));
-    	GPIOA->ODR |=   GPIOA1; // pull up (set) => OFF
-    	vTaskDelay(pdMS_TO_TICKS(500));
-	}
+/**
+ * 'Blink LED' task.
+ */
+static void LED_task(void *args) {
+  int delay_ms = *(int*)args;
+
+  while (1) {
+    LED.pin_toggle(LED_PIN_1);
+    vTaskDelay(pdMS_TO_TICKS(delay_ms));
+  }
 }
